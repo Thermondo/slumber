@@ -85,14 +85,15 @@ class Resource(ResourceAttributesMixin, object):
 
     def _request(self, method, data=None, files=None, params=None):
         serializer = self._store["serializer"]
+        fmt = self._store['format']
         url = self.url()
 
-        headers = {"accept": serializer.get_content_type()}
+        headers = {"accept": serializer.get_content_type(format=fmt)}
 
         if not files:
             if data is not None:
-                headers["content-type"] = serializer.get_content_type()
-                data = serializer.dumps(data)
+                headers["content-type"] = serializer.get_content_type(format=fmt)
+                data = serializer.dumps(data, format=fmt)
 
         resp = self._store["session"].request(method, url, data=data, params=params, files=files, headers=headers)
 
