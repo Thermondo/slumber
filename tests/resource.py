@@ -626,3 +626,25 @@ class ResourceTestCase(unittest.TestCase):
         resp = self.base_resource.post(data={'foo': 'bar'})
         expected = b'Pr\xc3\xa9paratoire'.decode('utf8')
         self.assertEqual(resp['result'], expected)
+
+    def test_resource_with_custom_format(self):
+        r = mock.Mock(spec=requests.Response)
+        r.status_code = 200
+        r.content = '{"result": ["a", "b", "c"]}'
+        r.headers = {"content-type": "application/json"}
+
+        self.base_resource._store.update({
+            "session": mock.Mock(spec=requests.Session),
+            "serializer": slumber.serialize.Serializer(),
+        })
+        self.base_resource._store["session"].request.return_value = r
+
+        resource = self.base_resource(format='yaml')
+        serializer = resource._store["serializer"]
+        fmt = resource._store['format']
+        content_type = serializer.get_content_type(format=fmt)
+        self.assertEqual(fmt, 'yaml')
+        self.assertEqual(content_type, 'text/yaml')
+
+        resp = self.base_resource(format='yaml').post(data={'foo': 'bar'})
+        self.assertEqual(resp['result'], ['a', 'b', 'c'])
